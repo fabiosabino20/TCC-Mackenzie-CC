@@ -5,26 +5,20 @@ using UnityEngine;
 
 public class Asteroid : MonoBehaviour
 {
+    [SerializeField] private AudioClip explosionSoundClip;
     [SerializeField] private Animator animator;
+    [SerializeField] private int life = 2;
+    [SerializeField] private const float moveSpeed = 3f;
 
-    private float boundary = -12.5f;
-    private float moveSpeed = 3f;
-    private int life = 2;
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+    private const float boundary = -12.5f;
 
     // Update is called once per frame
     void Update()
     {
-        if (transform.position.x <= boundary)
-        {
-            Destroy(gameObject);
-        }
-        //MoveLeft();
+        CheckBoundary();
+
+        if (animator.GetBool("isAlive"))
+            MoveLeft();
     }
 
     private void MoveLeft()
@@ -33,19 +27,28 @@ public class Asteroid : MonoBehaviour
         transform.Rotate(Vector3.forward * moveSpeed * 25 * Time.deltaTime, Space.Self);
     }
 
-    public void TakeDamage()
+    private void CheckBoundary()
     {
-        life -= 1;
-        if (life == 0)
+        if (transform.position.x <= boundary)
         {
-            animator.SetInteger("life", life);
-            StartCoroutine(Demolish());
+            Destroy(gameObject);
         }
     }
 
-    private IEnumerator Demolish()
+    public void TakeDamage(int damage)
     {
-        yield return new WaitForSeconds(0.4f);
+        life -= damage;
+        if (life <= 0)
+        {
+            animator.SetBool("isAlive", false);
+            GameManager.instance.PlaySoudFXClip(explosionSoundClip, transform, 0.8f);
+            StartCoroutine(DestroyAsteroid());
+        }
+    }
+
+    private IEnumerator DestroyAsteroid()
+    {
+        yield return new WaitForSeconds(0.417f);
         Destroy(gameObject);
     }
 }

@@ -7,29 +7,41 @@ using UnityEngine.SceneManagement;
 public class GameManager : MonoBehaviour
 {
     public PTP port;
-    public static GameManager Instance;
+    public static GameManager instance;
+    public bool isRunning = true;
+
+    [SerializeField] private AudioSource soundFXObject;
 
     private void Awake()
     {
-        if (Instance != null)
+        if (instance != null)
         {
             Destroy(gameObject);
             return;
         }
 
-        Instance = this;
+        instance = this;
         DontDestroyOnLoad(gameObject);
     }
 
-    // Start is called before the first frame update
-    void Start()
+    public IEnumerator ReturnToMainMenu()
     {
-
+        yield return new WaitForSeconds(2f);
+        SceneManager.LoadScene(0);
     }
 
-    // Update is called once per frame
-    void Update()
+    public void PlaySoudFXClip(AudioClip audioClip, Transform spawnTransform, float volume)
     {
-        
+        AudioSource audioSource = Instantiate(soundFXObject, spawnTransform.position, Quaternion.identity);
+
+        audioSource.clip = audioClip;
+
+        audioSource.volume = volume;
+
+        audioSource.Play();
+
+        float clipLength = audioSource.clip.length;
+
+        Destroy(audioSource.gameObject, clipLength);
     }
 }

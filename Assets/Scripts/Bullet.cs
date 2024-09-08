@@ -5,42 +5,43 @@ using UnityEngine;
 
 public class Bullet : MonoBehaviour
 {
-    float moveSpeed = 15f;
+    public int damage = 1;
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+    [SerializeField] private Animator animator;
+
+    private const float boundary = 11.5f;
+    private const float moveSpeed = 15f;
 
     // Update is called once per frame
     void Update()
     {
-        transform.Translate(Vector2.right * moveSpeed * Time.deltaTime);
+        if (animator.GetBool("isAlive"))
+            transform.Translate(Vector2.right * moveSpeed * Time.deltaTime);
+        if (transform.position.x >= boundary)
+        {
+            Destroy(gameObject);
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.gameObject.CompareTag("Boundary"))
-        {
-            StartCoroutine(DestroyBullet());
-        }
-        else if (collision.gameObject.CompareTag("Enemy"))
+        if (collision.gameObject.CompareTag("Enemy"))
         {
             Destroy(collision.gameObject);
-            Destroy(gameObject);
+            StartCoroutine(DestroyBullet());
         }
         else if (collision.gameObject.CompareTag("Asteroid"))
         {
             Asteroid asteroid = collision.gameObject.GetComponent<Asteroid>();
-            asteroid.TakeDamage();
-            Destroy(gameObject);
+            asteroid.TakeDamage(damage);
+            StartCoroutine(DestroyBullet());
         }
     }
 
     IEnumerator DestroyBullet()
     {
-        yield return new WaitForSeconds(0.1f);
+        animator.SetBool("isAlive", false);
+        yield return new WaitForSeconds(0.333f);
         Destroy(gameObject);
     }
 }
