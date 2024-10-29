@@ -5,7 +5,15 @@ using UnityEngine.Audio;
 
 public class SoundMixerManager : MonoBehaviour
 {
+    public static SoundMixerManager instance;
+
     [SerializeField] private AudioMixer audioMixer;
+    [SerializeField] private AudioSource soundFXObject;
+
+    private void Awake()
+    {
+        instance = this;
+    }
 
     public void SetMasterVolume(float level)
     {
@@ -20,5 +28,20 @@ public class SoundMixerManager : MonoBehaviour
     public void SetMusicVolume(float level)
     {
         audioMixer.SetFloat("musicVolume", level);
+    }
+
+    public void PlaySoudFXClip(AudioClip audioClip, Transform spawnTransform, float volume)
+    {
+        AudioSource audioSource = Instantiate(soundFXObject, spawnTransform.position, Quaternion.identity);
+
+        audioSource.clip = audioClip;
+
+        audioSource.volume = volume;
+
+        audioSource.Play();
+
+        float clipLength = audioSource.clip.length;
+
+        Destroy(audioSource.gameObject, clipLength);
     }
 }

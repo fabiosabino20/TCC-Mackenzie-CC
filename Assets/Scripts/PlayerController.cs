@@ -1,10 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using Color = UnityEngine.Color;
+using Image = UnityEngine.UI.Image;
 
 public class PlayerController : MonoBehaviour
 {
@@ -16,6 +19,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private const float moveSpeed = 5f;
     [SerializeField] private GameObject bulletPrefab;
     [SerializeField] private Slider heatGauge;
+    [SerializeField] private Image heatGaugeColor;
     [SerializeField] private TextMeshProUGUI flowText;
     [SerializeField] private GameObject flashSprite;
 
@@ -129,14 +133,17 @@ public class PlayerController : MonoBehaviour
             if (engineHeat >= 0 && engineHeat < 3)
             {
                 yield return new WaitForSeconds(0.85f);
+                heatGaugeColor.color = Color.yellow;
             }
             else if (engineHeat >= 3 && engineHeat < 7)
             {
                 yield return new WaitForSeconds(0.425f);
+                heatGaugeColor.color = Color.green;
             }
             else if (engineHeat >= 7 && engineHeat < 10)
             {
                 yield return new WaitForSeconds(1f);
+                heatGaugeColor.color = Color.red;
             }
             else if (engineHeat >= 10)
             {
@@ -147,7 +154,7 @@ public class PlayerController : MonoBehaviour
             {
                 Vector2 spawnPos = new(transform.position.x + 1.4f, transform.position.y);
                 Instantiate(bulletPrefab, spawnPos, Quaternion.identity);
-                GameManager.instance.PlaySoudFXClip(flashSoundClip, transform, 0.8f);
+                SoundMixerManager.instance.PlaySoudFXClip(flashSoundClip, transform, 0.8f);
                 StartCoroutine(FlashAnimation());
                 heatGauge.value = engineHeat / 10;
             }

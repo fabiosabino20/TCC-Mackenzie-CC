@@ -41,7 +41,7 @@ public class Asteroid : MonoBehaviour
         if (life <= 0)
         {
             animator.SetBool("isAlive", false);
-            GameManager.instance.PlaySoudFXClip(explosionSoundClip, transform, 0.8f);
+            SoundMixerManager.instance.PlaySoudFXClip(explosionSoundClip, transform, 0.8f);
             StartCoroutine(DestroyAsteroid());
         }
     }
