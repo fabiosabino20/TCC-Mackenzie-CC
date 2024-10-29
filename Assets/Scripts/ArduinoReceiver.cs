@@ -28,7 +28,7 @@ public class ArduinoReceiver : MonoBehaviour
     void PackReceiveProcessing(PTP.DATA data)
     {
         flow_rate = data.GetFloat();
-        playerController.engineHeat = flow_rate;
+        //playerController.engineHeat = flow_rate;
         //Debug.Log("\n-= Pack Data = -\n");
         //Debug.Log(flow_rate);
     }
