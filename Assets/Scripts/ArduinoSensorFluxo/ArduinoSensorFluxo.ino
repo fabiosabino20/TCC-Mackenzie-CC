@@ -1,43 +1,160 @@
-#include "TP4/STP4.h"
+byte statusLed = 13; // LED para controle
+byte sensorInterrupt = 0; // Este é o pino de entrada do sensor no Arduino (0 = digital pin 2)
+byte sensorPin = 2;
 
-STP4* port;
+// Variáveis do sensor
+float calibrationFactor = 4.8;
+volatile int pulseCount = 0;
 
-int flowPin = 2;    //Este é o pino de entrada no Arduino
-float flowRate = 0;    //Este é o valor que pretende-se calcular
-int flow = 1;
-volatile int count; //Este número precisa ser setado como volátil para garantir que ele seja atualizado corretamente durante o processo de interrupção
+// Variáveis para as métricas de fluxo e volume
+float flowRate = 0;
+float flowArray[200] = {0};
+int index = 0;
+float medianFlow = 0;
+float FVC = 0;
+float FEV1 = 0;
+float PEF = 0;
+float FEF2575 = 0;
+float relacaoFEV1FVC = 0;
+float flowTime = 0;
+float oldTime = 0;
+bool canPrint = false;
 
 void setup() {
-  pinMode(flowPin, INPUT); //Seta o pino de entrada
-  attachInterrupt(0, Flow, RISING);  //Configura o interruptor 0 (pino 2 no Arduino Uno) para rodar a função "Flow"
-  port = new STP4(9600);
-  Serial.begin(9600); //Inicia o Serial
-  //interrupts();
+  Serial.begin(9600); //Inicia a comunicação Serial
+
+  pinMode(statusLed, OUTPUT);
+  digitalWrite(statusLed, HIGH);
+
+  pinMode(sensorPin, INPUT);
+  digitalWrite(sensorPin, HIGH);
+
+  attachInterrupt(sensorInterrupt, pulseCounter, RISING);
+  interrupts();
 }
 
 void loop() {
-  count = 0;      // Reseta o contador para iniciarmos a contagem em 0 novamente
-  interrupts();   //Habilita o interrupção no Arduino
-  delay (1000);   //Espera 1 segundo
-  noInterrupts(); //Desabilita o interrupção no Arduino
-   
-  //Cálculos matemáticos
-  flowRate = (count / 4.8);        //Conta os pulsos no último segundo e divide por 4.8
-  flowRate = flowRate * 60;      //Converte segundos em minutos, tornando a unidade de medida mL/min
-  flowRate = flowRate / 1000;    //Converte mL em litros, tornando a unidade de medida L/min
+  if(pulseCount > 0) {
+    float start = millis();
+    delay(100);
+    noInterrupts();
+    
+    oldTime = millis();
+    flowTime += (millis() - start) / 1000;
+    flowRate = ((pulseCount / calibrationFactor) / 60) * 10;
+    flowArray[index] = flowRate;
+    index++;
 
-  port->BeginPack();
-  port->PushToPack(&flowRate);
-  port->SendPack();
+    sendMetrics();
 
-  //Serial.println(flowRate);           //Imprime a variável flowRate no Serial
+    pulseCount = 0;
+    canPrint = true;
+    interrupts();
+  }
+  else if (millis() - oldTime >= 2000 && canPrint) {
+    noInterrupts();
+    
+    calcFEV1();
+    calcPEF();
+    calcFVC();
+    medianFlow = FVC / flowTime;
+    relacaoFEV1FVC = (FEV1 / FVC) * 100;
+    calcFEF2575();
+
+    sendMetrics();
+    resetMetrics();
+
+    interrupts();
+  }
 }
- 
-void Flow()
-{
-  count++; //Quando essa função é chamada, soma-se 1 a variável "count" 
-  //port->BeginPack();
-  //port->PushToPack(&flow);
-  //port->PushToPack(&flowRate);
-  //port->SendPack();
+
+void pulseCounter() {
+  pulseCount++;
+}
+
+void calcFEV1() {
+  FEV1 = 0;
+  for (int i=0; i<10; i++){
+    FEV1 += flowArray[i];
+  }
+  FEV1 /= 10;
+}
+
+void calcPEF() {
+  for (int i=0; i<index; i++) {
+    if (flowArray[i] > PEF) {
+      PEF = flowArray[i];
+    }
+  }
+}
+
+void calcFVC() {
+  int count = 0;
+  float auxFVC = 0;
+
+  for (int i=0; i<index; i++){
+    count++;
+    auxFVC += flowArray[i];
+
+    if (count == 10) {
+      count = 0;
+      auxFVC /= 10;
+      FVC += auxFVC;
+    }
+  }
+
+  if (count != 0) {
+    auxFVC /= count;
+    FVC += (auxFVC * (count / 10));
+  }
+}
+
+void calcFEF2575() {
+  float FVC25 = FVC * 0.25;
+  float FVC75 = FVC * 0.75;
+  float aux = 0;
+  float volumeAcumulado = 0;
+  int count = 0;
+
+  for (int i=0; i<index; i++) {
+    aux = flowArray[i];
+    aux *= 0.1;
+    volumeAcumulado += aux;
+
+    if (volumeAcumulado >= FVC25) {
+      FEF2575 += flowArray[i];
+      count++;
+    }
+    if (volumeAcumulado > FVC75) {
+      FEF2575 /= count;
+      break;
+    }
+  }
+}
+
+void resetMetrics() {
+  for (int i=0; i<index; i++) {
+    flowArray[i] = 0;
+  }
+  flowRate = 0;
+  index = 0;
+  medianFlow = 0;
+  FVC = 0;
+  FEV1 = 0;
+  PEF = 0;
+  FEF2575 = 0;
+  relacaoFEV1FVC = 0;
+  flowTime = 0;
+  oldTime = 0;
+  canPrint = false;
+}
+
+void sendMetrics() {
+  // Envia os dados por Serial para Unity
+  Serial.println(flowRate);
+  Serial.println(FVC);
+  Serial.println(FEV1);
+  Serial.println(PEF);
+  Serial.println(relacaoFEV1FVC);
+  Serial.println(FEF2575);
 }

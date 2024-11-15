@@ -1,0 +1,2 @@
+C:\Users\fabio\Documents\Unity\TCC-Mackenzie-CC\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\CMakeLists.txt
+C:\Users\fabio\Documents\Unity\TCC-Mackenzie-CC\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\FramePacing\CMakeLists.txt
