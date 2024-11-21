@@ -6,24 +6,28 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using TMPro;
+using UnityEngine.UI;
+using Color = UnityEngine.Color;
+using Image = UnityEngine.UI.Image;
 
 public class BluetoothManager : MonoBehaviour
 {
-    [SerializeField] TextMeshProUGUI bluetoothInformation;
+    public float flow_rate = 0;
+    public float FVC = 0;
+    public float FEV1 = 0;
+    public float PEF = 0;
+    public float relacaoFEV1FVC = 0;
+    public float FEF2575 = 0;
 
+    [SerializeField] TextMeshProUGUI bluetoothInformation;
+    
     private BluetoothHelper bluetoothHelper;
     private string deviceName = "HC-05"; // Nome do dispositivo Bluetooth do Arduino
     private List<string> dataBuffer = new List<string>(); // Buffer para armazenar as linhas recebidas
     private TextMeshProUGUI flowText;
-
-    float flow_rate = 0;
-    float FVC = 0;
-    float FEV1 = 0;
-    float PEF = 0;
-    float relacaoFEV1FVC = 0;
-    float FEF2575 = 0;
-
-    PlayerController playerController;
+    private Slider heatGauge;
+    private Image heatGaugeColor;
+    private PlayerController playerController;
 
     void Start()
     {
@@ -104,6 +108,12 @@ public class BluetoothManager : MonoBehaviour
                 if (flowText != null)
                 {
                     UpdateFlowText(flow_rate);
+                    UpdateHeatGauge(flow_rate);
+                }
+                if (flowText != null && flow_rate < 0.4f)
+                {
+                    UpdateFlowText(0);
+                    UpdateHeatGauge(0);
                 }
 
                 Debug.Log($"Fluxo: {flow_rate} L/s");
@@ -137,6 +147,10 @@ public class BluetoothManager : MonoBehaviour
         {
             playerController = GameObject.Find("Player").GetComponent<PlayerController>();
             flowText = GameObject.Find("Fluxo").GetComponent<TextMeshProUGUI>();
+            heatGauge = GameObject.Find("HeatGauge").GetComponent<Slider>();
+            heatGaugeColor = GameObject.Find("HeatGaugeFill").GetComponent<Image>();
+            heatGaugeColor.color = Color.grey;
+            heatGauge.value = 0;
             Debug.Log("PlayerController conectado.");
         }
         else
@@ -201,5 +215,28 @@ public class BluetoothManager : MonoBehaviour
     private void UpdateFlowText(float flowValue)
     {
         flowText.text = "Fluxo: " + flowValue.ToString("F2") + " L/min";
+    }
+
+    private void UpdateHeatGauge(float flowValue)
+    {
+        heatGauge.value = flowValue / 3;
+
+        if (flowValue < 0.2f)
+        {
+            heatGaugeColor.color = Color.grey;
+            heatGauge.value = 0;
+        }
+        else if (flowValue >= 0.2f && flowValue < 1.0f)
+        {
+            heatGaugeColor.color = Color.yellow;
+        }
+        else if (flowValue >= 1.0f && flowValue < 2.0f)
+        {
+            heatGaugeColor.color = Color.green;
+        }
+        else if (flowValue >= 2.0f && flowValue < 3.0f)
+        {
+            heatGaugeColor.color = Color.red;
+        }
     }
 }

@@ -18,9 +18,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private AudioClip explosionSoundClip;
     [SerializeField] private const float moveSpeed = 5f;
     [SerializeField] private GameObject bulletPrefab;
-    [SerializeField] private Slider heatGauge;
-    [SerializeField] private Image heatGaugeColor;
     [SerializeField] private GameObject flashSprite;
+    [SerializeField] private MenuManager menuManager;
 
     private const float boundary = 3.5f;
     private InputActions inputActions;
@@ -36,8 +35,6 @@ public class PlayerController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        heatGaugeColor.color = Color.grey;
-        heatGauge.value = 0;
         StartCoroutine(Shoot());
     }
 
@@ -116,7 +113,8 @@ public class PlayerController : MonoBehaviour
         spriteRenderer.enabled = false;
         animator.enabled = false;
 
-        StartCoroutine(GameManager.instance.ReturnToMainMenu());
+        menuManager.ShowReportMenu();
+        //StartCoroutine(GameManager.instance.ReturnToMainMenu());
         //Destroy(gameObject);
     }
 
@@ -126,25 +124,17 @@ public class PlayerController : MonoBehaviour
         while (isAlive)
         {
             yield return new WaitForSeconds(0.1f);
-            if (engineHeat<0.2f)
-            {
-                heatGaugeColor.color = Color.grey;
-                heatGauge.value = 0;
-            }
-            else if (engineHeat >= 0.2f && engineHeat < 1.0f)
+            if (engineHeat >= 0.2f && engineHeat < 1.0f)
             {
                 yield return new WaitForSeconds(0.85f);
-                heatGaugeColor.color = Color.yellow;
             }
             else if (engineHeat >= 1.0f && engineHeat < 2.0f)
             {
                 yield return new WaitForSeconds(0.425f);
-                heatGaugeColor.color = Color.green;
             }
             else if (engineHeat >= 2.0f && engineHeat < 3.0f)
             {
                 yield return new WaitForSeconds(1f);
-                heatGaugeColor.color = Color.red;
             }
             else if (engineHeat >= 3.0f)
             {
@@ -157,7 +147,6 @@ public class PlayerController : MonoBehaviour
                 Instantiate(bulletPrefab, spawnPos, Quaternion.identity);
                 SoundMixerManager.instance.PlaySoudFXClip(flashSoundClip, transform, 0.8f);
                 StartCoroutine(FlashAnimation());
-                heatGauge.value = engineHeat / 3;
             }
         }
     }
